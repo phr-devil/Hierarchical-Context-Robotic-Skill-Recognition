@@ -1,0 +1,10 @@
+# Tested with Python 3.13 on CPU. Lower bounds are the oldest versions the code
+# is expected to run on; the upper bounds avoid silent numerical drift.
+numpy>=1.24,<3
+scipy>=1.10,<2
+scikit-learn>=1.3,<2
+torch>=2.0,<3
+h5py>=3.8,<4
+
+# tests only
+pytest>=7.0

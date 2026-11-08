@@ -1,0 +1,11 @@
+# keep the repository byte-identical across platforms
+* text=auto
+
+*.py   text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+*.cff  text eol=lf
+*.txt  text eol=lf
+
+*.h5   binary
+*.npz  binary

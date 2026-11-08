@@ -1,0 +1,40 @@
+{
+  "data": {
+    "split_file": "splits/train_split1.txt",
+    "window": 0.4,
+    "stride": 0.2,
+    "history_frames": 15
+  },
+  "single_frame": {
+    "C": 1.0,
+    "max_iter": 2000
+  },
+  "gru": {
+    "hidden": 48,
+    "layers": 1,
+    "epochs": 10,
+    "batch": 256,
+    "subsample": 60000,
+    "lr": 0.001
+  },
+  "dual_head": {
+    "action_aux_weight": 1.0
+  },
+  "gate": {
+    "epochs": 300,
+    "lr": 0.05
+  },
+  "decode": {
+    "lag_frames": 3,
+    "nominal_wait_seconds": 0.6
+  },
+  "evaluation": {
+    "iou_thresholds": [0.5, 0.75],
+    "boundary_tolerances": [0.2, 0.5]
+  },
+  "seeds": {
+    "global": 0,
+    "volume_match_seeds": 5,
+    "bootstrap_seed": 20261104
+  }
+}

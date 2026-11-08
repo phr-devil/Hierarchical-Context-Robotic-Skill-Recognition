@@ -1,0 +1,104 @@
+{
+  "provenance": {
+    "source": "development-split runs of this code base (scripts/10, 11, 20, 21, 22)",
+    "note": "Values are transcribed from the reported runs, not recomputed during repository preparation. A full retraining run was not executed for this repository, so treat them as reference targets rather than as an independent reproduction.",
+    "sealed_holdout": "not read; all numbers are development-set evidence"
+  },
+  "protocol": {
+    "dataset": "REASSEMBLE, development split train_split1.txt",
+    "episodes": 111,
+    "frames_on_continuous_timeline": 185451,
+    "annotated_frames": 169728,
+    "background_frames": 15723,
+    "skills": 9,
+    "parent_actions": 4,
+    "objects": 17,
+    "recording_dates": 5,
+    "frame_feature_dim": 72,
+    "fused_feature_dim": 76,
+    "history_seconds": 3.0,
+    "decoder": "fixed-lag Viterbi, 3 frames, 0.6 s nominal wait",
+    "fold": "leave one assembly object out; only that object's labelled frames are scored"
+  },
+  "main_run": {
+    "segmental_f1_mean_over_17_object_folds": {
+      "SF": 0.6717,
+      "GRUctx": 0.7135,
+      "shuffle_control": 0.4098,
+      "parent_action_oracle": 0.8236,
+      "visible_object_reference": 0.6683,
+      "volume_matched_control": 0.6839
+    },
+    "macro_f1_mean_over_17_object_folds": {
+      "SF": 0.5341,
+      "GRUctx": 0.5686
+    },
+    "full_episode_boundary_f1_at_0_5": {
+      "SF": 0.5948,
+      "GRUctx": 0.5894
+    },
+    "volume_matched_note": "the reported run scored 0.6854; this repository samples the five control seeds from a sorted episode list so the draw does not depend on PYTHONHASHSEED, which moves the mean by 0.0015"
+  },
+  "five_model_round": {
+    "segmental_f1_mean_over_17_object_folds": {
+      "SF": 0.6717,
+      "GRUskill": 0.6514,
+      "DualHead": 0.6468,
+      "GRUctx": 0.7091,
+      "GateCtx": 0.7093
+    },
+    "note": "same folds, decoder and training budget; GRUctx and DualHead are not a strict single-variable ablation of each other",
+    "episode_coverage_fraction": {
+      "GRUctx>SF": 0.4727,
+      "DualHead>SF": 0.3449,
+      "GRUskill>SF": 0.3607,
+      "GateCtx>GRUctx": 0.0157
+    }
+  },
+  "statistics": {
+    "unit": "episode",
+    "episodes_improved": 97,
+    "episodes_total": 111,
+    "improved_fraction": 0.874,
+    "mean_dSegF1": 0.0446,
+    "wilcoxon_W": 508.0,
+    "wilcoxon_two_sided_p": 2.011e-14,
+    "episode_bootstrap_95ci": [
+      0.0359,
+      0.0536
+    ],
+    "date_clustered_bootstrap_95ci": [
+      0.027,
+      0.0711
+    ],
+    "date_level_wilcoxon_two_sided_p": 0.0625,
+    "fold_non_independence": {
+      "mean_test_episodes_per_fold": 86.1,
+      "mean_pairwise_test_overlap_episodes": 75.8,
+      "mean_pairwise_train_overlap_episodes": 14.5
+    },
+    "note": "recomputed by scripts/22 from the evaluation file that yields 0.6717 / 0.7135. An earlier audit over a previous evaluation file reported 96 of 111 (86.5 %), W = 493 and p = 1.43e-14; those values do not reproduce from the final file."
+  },
+  "known_limitations": [
+    "development split only; the 37-episode sealed holdout was never read",
+    "single global seed; cross-seed robustness was not evaluated",
+    "the 17 object folds are correlated replications, not 17 independent tests",
+    "the gain is label-level: full-episode boundary F1 does not improve",
+    "the oracle is a conditional upper bound that requires the true parent action at every frame",
+    "GRUctx and DualHead differ in both where the action information enters and in the decision rule"
+  ],
+  "independent_reproduction": {
+    "date": "2026-11-08",
+    "what": "scripts/00 to 02 then scripts/10 were re-run end to end on the full development split",
+    "runtime_seconds": 1170,
+    "exact_match_folds": "17 of 17 for SF, GRUctx, the shuffle control, the oracle and the visible-object reference (max |difference| 0.0 over 17 folds)",
+    "segmental_f1": {
+      "SF": 0.6717,
+      "GRUctx": 0.7135,
+      "shuffle_control": 0.4098,
+      "parent_action_oracle": 0.8236,
+      "visible_object_reference": 0.6683
+    },
+    "not_rerun": "the five-model round (scripts/11) was executed on two of the seventeen folds; all five schemes matched the reported per-fold values exactly on both, the remaining fifteen folds were not re-run"
+  }
+}

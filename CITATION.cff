@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: >-
+  Citation metadata for this software. The accompanying paper is not published
+  yet, so no article reference is given here; do not cite this as a publication
+  until that reference is added below.
+
+title: "Predicted Hierarchical Action Context for Low-Level Skill Recognition in Robotic Assembly"
+abstract: >-
+  Reference implementation for evaluating whether an online posterior over the
+  parent assembly action, predicted from a three-second causal history of
+  robot-state features, improves low-level robotic skill recognition on the
+  REASSEMBLE dataset under leave-one-object-out cross-validation.
+type: software
+version: "1.0.0"
+repository-code: "https://github.com/phr-devil/Hierarchical-Context-Robotic-Skill-Recognition"
+url: "https://github.com/phr-devil/Hierarchical-Context-Robotic-Skill-Recognition"
+
+# TODO(authors): replace the alias below with the confirmed author list once the
+# paper's author order and affiliations are settled. Do not invent names.
+authors:
+  - alias: phr-devil
+    website: "https://github.com/phr-devil"
+
+keywords:
+  - robotic manipulation
+  - temporal action segmentation
+  - hierarchical context
+  - low-level skill recognition
+  - force/torque sensing
+  - REASSEMBLE
+
+# TODO(license): no licence has been chosen; see README. Add `license:` only
+# after the code ownership and the terms of the third-party dependencies are
+# confirmed.
