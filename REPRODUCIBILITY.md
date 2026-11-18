@@ -85,6 +85,13 @@ would be a second look at the same data, and the pre-registration forbids it. Th
 therefore reported as they were produced, with their hashes, and the code that produced them is
 this code.
 
+For the same reason `scripts/20_train_predict.py` and `scripts/30_score.py` have **not** been
+executed against the corpus in this checkout: doing so would mean building the test grid and
+running inference over the consumed holdout. What was exercised here is `scripts/10_build_grid.py`
+(development split, executed) and `scripts/90_verify_dev_grid.py` (executed, identical), plus the
+components of steps 2 and 3 through the unit suite — pairing, decoding, matching, aggregation and
+the decision rule — and the decision step end to end on the frozen per-episode values.
+
 A reader who runs the pipeline end to end will get numbers close to, but not necessarily
 identical to, those above. Sources of legitimate divergence, in order of size:
 
