@@ -113,9 +113,16 @@ sd 0.0668, 344 positive. Diagnostic only — cells are not independent observati
 | Nudge | — | 0.0 % | 10 | 0.0 % |
 | **pooled** | 7,743 | 14.9 % | 2,452 | **17.1 %** |
 
-A `Release` segment shorter than the 0.4 s window cannot appear on the grid at all. On the test
-split nearly two thirds of `Release` segments are in that position, which caps what any model
-can score on the class before it sees a single frame.
+**The ≤ 2-frame category includes 0-, 1- and 2-frame intervals.** The 64.5%
+test figure for `Release` is their combined share, **not** the fraction of
+`Release` intervals entirely absent from the evaluation grid. Under the frozen
+`start + 0.4 s` grid rule, native intervals shorter than 0.4 s contribute zero
+frames. The separately established zero-frame counts across **all nine skills**
+are 83/7,743 (1.07%) in development and 33/2,452 (1.35%) in test; no
+`Release`-specific zero-frame fraction is inferred from those pooled values.
+These measurements describe the reference representation; they do **not** impose
+a subunit maximum on gridded-reference segmental F1, which can reach 1.0 for
+perfectly matching predictions.
 
 ---
 
