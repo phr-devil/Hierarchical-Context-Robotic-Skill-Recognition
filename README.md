@@ -82,12 +82,20 @@ them requiring a trained model:
 | long Release segments (≥ 6 frames) matched at IoU 0.5 | 28.0 % | 7.3 % |
 | frame share of long Release segments predicted as `Grasp` | 59.4 % | 66.3 % |
 
-A segment shorter than the 0.4 s window contributes **no frame at all** to the 5 Hz grid. That is
-not a model failure, and no readout can recover it. The last two rows are diagnostics: they show
-that long `Release` segments are largely predicted as `Grasp`, but not why. Separating an
-annotation effect from a model effect would need a double-annotated subset, which does not exist,
-so the manuscript states this as a bound on what the score can mean rather than as a finding about
-the annotator.
+**Short grid coverage is not the same as zero-frame censoring.** The 64.5% test
+figure for `Release` includes native intervals represented by **0, 1 or 2 frames**; it
+does **not** mean that 64.5% of `Release` intervals disappeared from the grid. Under
+the frozen grid construction, an interval shorter than the 0.4 s feature window
+has no grid sample. Across **all nine skills**, 83 of 7,743 development intervals
+(1.07%) and 33 of 2,452 test intervals (1.35%) have zero grid frames; these
+pooled counts must not be presented as `Release`-specific rates. This is a
+measurement of the gridded reference, **not a subunit theoretical ceiling on
+segmental F1**: an exact prediction of that reference can still score 1.0.
+
+The last two rows are distinct, prediction-side diagnostics: they show that long
+`Release` intervals are frequently predicted as `Grasp`, but not why. Separating
+an annotation effect from a model effect would require independent annotation
+evidence that this study does not have.
 
 What this repository does **not** support: that `Release` annotations are wrong (no double-annotated
 subset was collected), that the readout would help on another corpus, or that any number here is
