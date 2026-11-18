@@ -1,13 +1,15 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "skillseg"
-version = "2.0.0"
+version = "2.0.1"
 description = "Readout sensitivity and temporal evaluation for proprioceptive robot skill segmentation"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "numpy>=1.24,<3",
     "scipy>=1.10,<2",

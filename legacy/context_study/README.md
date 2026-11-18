@@ -316,6 +316,6 @@ please do not cite this as a published paper yet.
 
 ## Licence
 
-No licence has been chosen. The code authorship and the terms of the third-party dependencies have
-not been confirmed, so this repository deliberately ships without a `LICENSE` file rather than
-asserting terms it cannot substantiate. Contact the maintainers before reuse or redistribution.
+The archived code is covered by the repository's MIT Licence; see the `LICENSE` file in the
+repository root. That licence covers code only. The REASSEMBLE corpus keeps its own terms and is
+not redistributed here, and the third-party dependencies keep theirs.

@@ -311,9 +311,22 @@ does not touch the holdout.
 
 ## Licence
 
-No licence has been declared. The code is published for inspection and research use; until the
-author adds a licence, reuse requires permission. The REASSEMBLE corpus is governed by its own
-terms and is not covered by anything in this repository.
+The code and documentation in this repository are released under the **MIT Licence**; see
+[LICENSE](LICENSE). It covers `src/skillseg/`, `scripts/`, `tests/`, `configs/`, `docs/`, this
+README and the archived study in `legacy/`.
+
+Three things sit outside that grant and must not be read into it:
+
+* **The REASSEMBLE corpus.** No data is redistributed here. The dataset is released by its own
+  authors under their own terms; the MIT Licence grants no rights to it, and the dataset's terms
+  do not extend to this code. Download it from the official source and follow its licence.
+* **Third-party dependencies.** numpy, scipy, scikit-learn, torch and h5py are installed, not
+  vendored, and each keeps its own licence (all BSD-3-Clause in the versions tested; see
+  `requirements.txt`). The MIT Licence does not relicense them.
+* **The manuscript text.** Not part of this repository.
+
+If you use this code in academic work, cite it as described in [CITATION.cff](CITATION.cff); the
+licence and the citation request are separate obligations.
 
 ## Contact
 

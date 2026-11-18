@@ -17,7 +17,9 @@ abstract: >-
   under a pre-registered rule that is reported together with the clause it
   conflicts with.
 type: software
-version: "2.0.0"
+version: "2.0.1"
+date-released: "2026-11-18"
+license: MIT
 repository-code: "https://github.com/phr-devil/Hierarchical-Context-Robotic-Skill-Recognition"
 url: "https://github.com/phr-devil/Hierarchical-Context-Robotic-Skill-Recognition"
 
@@ -36,6 +38,3 @@ keywords:
   - proprioception
   - force/torque
   - REASSEMBLE
-
-# TODO(license): no licence has been declared. Add `license:` only after the code
-# ownership and the terms of the third-party dependencies are confirmed.

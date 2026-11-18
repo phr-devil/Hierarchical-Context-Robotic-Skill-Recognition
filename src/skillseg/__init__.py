@@ -28,6 +28,6 @@ metrics   run-level one-to-one matching, cell/episode scores, bootstrap, rules
 pipeline  end-to-end orchestration for one seed and for the decision step
 """
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 __all__ = ["config", "data", "features", "objects", "models", "decode", "metrics", "pipeline"]

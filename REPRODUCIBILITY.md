@@ -2,6 +2,15 @@
 
 What was re-run, what was not, and how to check either claim.
 
+**Status at `v2.0.1`.** That release changes documentation, citation metadata and licence terms
+only: the algorithm, the configuration, the tests and the frozen results are unchanged from
+`v2.0.0`, so the evidence classes below carry over without re-verification, and nothing here was
+re-run to produce it. The text that did change is the short-segment diagnostic in `README.md` and
+`docs/RESULTS.md`, which now separates grid coverage from zero-frame censoring and no longer
+implies a ceiling on segmental F1 that the measurement does not support. The commands under
+"Reproducing the verification" are the ones actually executed; `scripts/20_train_predict.py` and
+`scripts/30_score.py` were not executed against the corpus.
+
 ---
 
 ## Environment
