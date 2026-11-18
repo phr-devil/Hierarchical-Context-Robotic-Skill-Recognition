@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skillseg"
+version = "2.0.0"
+description = "Readout sensitivity and temporal evaluation for proprioceptive robot skill segmentation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24,<3",
+    "scipy>=1.10,<2",
+    "scikit-learn>=1.3,<2",
+    "torch>=2.0,<3",
+    "h5py>=3.8,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

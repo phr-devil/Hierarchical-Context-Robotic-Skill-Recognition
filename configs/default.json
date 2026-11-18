@@ -1,40 +1,69 @@
 {
-  "data": {
-    "split_file": "splits/train_split1.txt",
-    "window": 0.4,
-    "stride": 0.2,
-    "history_frames": 15
+  "_comment": [
+    "Frozen protocol constants. Every value here was fixed before the holdout was opened.",
+    "Rates are fractions in [0,1]: 0.01 is one percentage point.",
+    "dataset.root must point at the REASSEMBLE release; it is left empty on purpose so that no machine-specific path is published. Pass --dataset-root, or set the SKILLSEG_DATASET_ROOT environment variable.",
+    "grid.skills and grid.actions are alphabetical, which is the corpus order; do not reorder them, label indices are defined by this list."
+  ],
+  "dataset": {
+    "root": "",
+    "data_subdir": "data/data",
+    "split_subdir": "splits",
+    "split_suffix": "_split1.txt"
   },
-  "single_frame": {
-    "C": 1.0,
-    "max_iter": 2000
+  "grid": {
+    "window_s": 0.4,
+    "stride_s": 0.2,
+    "skills": ["Align", "Approach", "Grasp", "Lift", "Nudge", "Pull", "Push", "Release", "Twist"],
+    "actions": ["insert", "pick", "place", "remove"]
   },
-  "gru": {
-    "hidden": 48,
-    "layers": 1,
-    "epochs": 10,
-    "batch": 256,
-    "subsample": 60000,
-    "lr": 0.001
+  "features": {
+    "history_frames": 15,
+    "proprio_channels": ["joint_positions", "joint_velocities", "gripper_positions", "gripper_velocities", "gripper_efforts"],
+    "force_channels": ["measured_force", "measured_torque"],
+    "proprio_dims": [7, 7, 2, 2, 2],
+    "force_dims": [3, 3]
   },
-  "dual_head": {
-    "action_aux_weight": 1.0
-  },
-  "gate": {
-    "epochs": 300,
-    "lr": 0.05
+  "arms": {
+    "a": {
+      "hidden": 48,
+      "epochs": 10,
+      "batch": 256,
+      "lr": 0.001
+    },
+    "p": {
+      "C": 1.0,
+      "class_weight": "balanced",
+      "solver": "lbfgs",
+      "max_iter": 2000,
+      "random_state": 0
+    },
+    "s": {
+      "C": 1.0,
+      "class_weight": "balanced",
+      "solver": "lbfgs",
+      "max_iter": 2000,
+      "random_state": 0
+    }
   },
   "decode": {
-    "lag_frames": 3,
-    "nominal_wait_seconds": 0.6
+    "lag_frames": 3
   },
   "evaluation": {
-    "iou_thresholds": [0.5, 0.75],
-    "boundary_tolerances": [0.2, 0.5]
+    "iou_threshold": 0.5,
+    "bootstrap_resamples": 4000,
+    "bootstrap_seed": 20261111
+  },
+  "prereg": {
+    "confirm_delta": 0.01,
+    "equiv_upper": 0.005,
+    "min_improved": 24,
+    "max_ci_width": 0.02
   },
   "seeds": {
-    "global": 0,
-    "volume_match_seeds": 5,
-    "bootstrap_seed": 20261104
+    "values": [0, 1, 2],
+    "base": 20261110,
+    "stride": 1000,
+    "offset": 18
   }
 }

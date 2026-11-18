@@ -1,94 +1,93 @@
+"""Decoding: prior correction, transition estimation, fixed-lag Viterbi."""
 import numpy as np
+import pytest
 
-from crps import common
-
-
-def _random_emission(n, k, seed=0):
-    rng = np.random.RandomState(seed)
-    p = rng.rand(n, k) + 0.05
-    return p / p.sum(1, keepdims=True)
+from skillseg import decode
 
 
-def _random_transition(k, seed=0):
-    rng = np.random.RandomState(seed)
-    a = rng.rand(k, k) + 0.1
-    return a / a.sum(1, keepdims=True)
+def test_prior_correction_renormalises():
+    p = np.array([[0.7, 0.2, 0.1], [0.1, 0.1, 0.8]])
+    corrected = decode.prior_correct(p, np.full(3, 1 / 3))
+    assert np.allclose(corrected.sum(axis=1), 1.0)
+    assert np.allclose(corrected, p)
 
 
-def _full_viterbi(emission, A):
-    logp = np.log(np.maximum(emission, 1e-300))
-    logA = np.log(np.maximum(A, 1e-12))
-    L, K = emission.shape
-    delta = logp[0].copy()
-    back = np.zeros((L, K), dtype=int)
-    for i in range(1, L):
-        cand = delta[:, None] + logA
-        back[i] = cand.argmax(0)
-        delta = cand.max(0) + logp[i]
-    path = np.zeros(L, dtype=int)
-    path[-1] = int(delta.argmax())
-    for i in range(L - 1, 0, -1):
-        path[i - 1] = back[i, path[i]]
-    return path
+def test_prior_correction_downweights_frequent_classes():
+    p = np.array([[0.5, 0.5]])
+    weights = np.array([10.0, 1.0])
+    corrected = decode.prior_correct(p, weights)
+    assert corrected[0, 1] > corrected[0, 0]
 
 
-def test_hmm_filter_is_causal():
-    """Outputs on a prefix must not change when future frames are appended."""
-    k, L = 3, 12
-    P = _random_emission(L, k, seed=1)
-    A = _random_transition(k, seed=2)
-    full = np.zeros(L, dtype=int)
-    common.dec_hmm_filter(P, A, [np.arange(L)], full)
-    prefix = np.zeros(6, dtype=int)
-    common.dec_hmm_filter(P[:6], A, [np.arange(6)], prefix)
-    assert np.array_equal(full[:6], prefix)
+def test_class_weights_are_inverse_frequency():
+    labels = np.array([0, 0, 0, 1, 1, 2])
+    w = decode.class_weights(labels, 3)
+    # counts are 3, 2, 1 over 6 frames and 3 classes: 6 / (3 * count)
+    assert w[0] == pytest.approx(6 / 9)
+    assert w[1] == pytest.approx(1.0)
+    assert w[2] == pytest.approx(2.0)
 
 
-def test_viterbi_lag_matches_full_path_when_lag_covers_sequence():
-    k, L = 3, 10
-    P = _random_emission(L, k, seed=3)
-    A = _random_transition(k, seed=4)
-    out = np.zeros(L, dtype=int)
-    common.viterbi_lag(P, A, [np.arange(L)], out, lag=L + 5)
-    assert np.array_equal(out, _full_viterbi(P, A))
+def test_transition_matrix_rows_sum_to_one():
+    labels = np.array([0, 0, 1, 1, 2, 0])
+    seqs = [("E", np.arange(6))]
+    t = decode.transition_matrix(labels, seqs, 3, alpha=1.0)
+    assert np.allclose(t.sum(axis=1), 1.0)
 
 
-def test_viterbi_lag_commits_with_requested_delay():
-    """With lag=1 every frame except the last is committed before the frontier."""
-    k, L = 3, 8
-    P = _random_emission(L, k, seed=5)
-    A = _random_transition(k, seed=6)
-    out = np.zeros(L, dtype=int)
-    common.viterbi_lag(P, A, [np.arange(L)], out, lag=1)
-    assert np.all(out >= 0)
-    assert np.all(out < k)
+def test_background_label_lands_on_the_last_row():
+    """Documents inherited behaviour: -1 indexes the last class row.
+
+    The frozen scoring program passed the full label array, background included,
+    so outgoing transitions of background frames were added to the last skill.
+    This is a defect that the reported numbers contain; it is pinned here so that
+    it cannot be changed silently.
+    """
+    labels = np.array([2, -1, 0])
+    seqs = [("E", np.arange(3))]
+    t = decode.transition_matrix(labels, seqs, 3, alpha=0.0)
+    # (2 -> -1) was counted as (2 -> 2) and (-1 -> 0) as (2 -> 0): the last skill
+    # row ends up holding both a self-loop and an edge that no class-2 frame made
+    assert t[2, 2] == pytest.approx(0.5)
+    assert t[2, 0] == pytest.approx(0.5)
 
 
-def test_viterbi_lag_keeps_groups_independent():
+def test_viterbi_removes_a_single_frame_flicker():
     k = 3
-    P = _random_emission(10, k, seed=7)
-    A = _random_transition(k, seed=8)
-    out = np.zeros(10, dtype=int)
-    common.viterbi_lag(P, A, [np.arange(0, 5), np.arange(5, 10)], out, lag=2)
-    alone_a = np.zeros(10, dtype=int)
-    common.viterbi_lag(P, A, [np.arange(0, 5)], alone_a, lag=2)
-    assert np.array_equal(out[:5], alone_a[:5])
+    posteriors = np.tile(np.array([0.90, 0.06, 0.04]), (40, 1))
+    posteriors[20] = np.array([0.44, 0.52, 0.04])   # one frame leans the wrong way
+    transition = np.full((k, k), 0.1) / (k - 1)
+    np.fill_diagonal(transition, 0.9)
+    pred = decode.decode_episodes(posteriors, [("E", np.arange(40))], transition, lag=3)
+    assert (pred == 0).all()
 
 
-def test_filter_prefers_sticky_path_under_strong_transition():
-    k = 2
-    A = np.array([[0.95, 0.05], [0.05, 0.95]])
-    P = np.array([[0.55, 0.45]] * 6)
-    out = np.zeros(6, dtype=int)
-    common.dec_hmm_filter(P, A, [np.arange(6)], out)
-    assert out[0] == 0
-    assert np.all(out == 0)
+def test_viterbi_follows_sustained_evidence():
+    k = 3
+    truth = np.array([0] * 30 + [1] * 30 + [2] * 30)
+    posteriors = np.full((len(truth), k), 0.025)
+    posteriors[np.arange(len(truth)), truth] = 0.95
+    transition = np.full((k, k), 0.15) / (k - 1)
+    np.fill_diagonal(transition, 0.85)
+    pred = decode.decode_episodes(posteriors, [("E", np.arange(len(truth)))], transition, lag=3)
+    assert (pred == truth).mean() > 0.95
 
 
-def test_emission_dominates_when_transitions_are_diffuse():
-    k = 2
-    A = np.array([[0.5, 0.5], [0.5, 0.5]])
-    P = np.array([[0.9, 0.1], [0.1, 0.9]])
-    out = np.zeros(2, dtype=int)
-    common.dec_hmm_filter(P, A, [np.arange(2)], out)
-    assert list(out) == [0, 1]
+def test_lag_commits_every_frame():
+    posteriors = np.tile(np.eye(3)[0], (30, 1))
+    transition = np.full((3, 3), 1 / 3)
+    for lag in (1, 3):
+        pred = decode.decode_episodes(posteriors, [("E", np.arange(30))], transition, lag)
+        assert len(pred) == 30
+        assert (pred == 0).all()
+
+
+def test_episodes_are_decoded_independently():
+    # two episodes with opposite evidence must not influence each other
+    k = 3
+    a = np.tile(np.eye(k)[0], (20, 1))
+    b = np.tile(np.eye(k)[1], (20, 1))
+    posteriors = np.vstack([a, b])
+    seqs = [("A", np.arange(20)), ("B", np.arange(20, 40))]
+    pred = decode.decode_episodes(posteriors, seqs, np.full((k, k), 1 / k), 2)
+    assert (pred[:20] == 0).all() and (pred[20:] == 1).all()

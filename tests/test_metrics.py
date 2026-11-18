@@ -1,105 +1,109 @@
+"""Scoring definitions: matching, cell/episode aggregation, bootstrap."""
 import numpy as np
 import pytest
 
-from crps import common
+from skillseg import metrics, objects
 
 
-def test_rle_roundtrip():
-    seq = [0, 0, 1, 1, 1, 0]
-    runs = common.rle(seq)
-    assert runs == [(0, 0, 1), (1, 2, 4), (0, 5, 5)]
-    rebuilt = []
-    for label, s, e in runs:
-        rebuilt.extend([label] * (e - s + 1))
-    assert rebuilt == seq
+def test_rle_inclusive_indices():
+    assert metrics.rle(np.array([0, 0, 1])) == [(0, 0, 1), (1, 2, 2)]
+    assert metrics.rle(np.array([], dtype=int)) == []
 
 
-def test_seg_counts_perfect_prediction():
-    gt = np.array([0, 0, 0, 1, 1, 1])
-    tp, fp, fn = common.seg_counts(gt, gt, 0.5)
+def test_perfect_prediction_scores_one():
+    y = np.array([0, 0, 1, 1])
+    tp, fp, fn = metrics.segment_counts(y, y.copy())
     assert (tp, fp, fn) == (2, 0, 0)
+    assert metrics.f1_from_counts(tp, fp, fn) == pytest.approx(1.0)
 
 
-def test_seg_counts_requires_label_agreement():
-    gt = np.array([0, 0, 0, 1, 1, 1])
-    pr = np.array([1, 1, 1, 1, 1, 1])
-    tp, fp, fn = common.seg_counts(gt, pr, 0.5)
-    assert tp == 1          # only the label-1 segment can match
-    assert fp == 0
-    assert fn == 1
+def test_wrong_class_is_both_a_miss_and_a_false_alarm():
+    truth = np.array([0, 0, 0, 0])
+    pred = np.array([1, 1, 1, 1])
+    assert metrics.segment_counts(truth, pred) == (0, 1, 1)
 
 
-def test_seg_counts_iou_threshold():
-    gt = np.array([0, 0, 0, 0])
-    pr = np.array([1, 1, 0, 0])
-    # predicted label-0 segment [2,3] against ground truth [0,3]: IoU 2/4 = 0.5
-    assert common.seg_counts(gt, pr, 0.5)[0] == 1
-    assert common.seg_counts(gt, pr, 0.75)[0] == 0
+def test_matching_is_one_to_one():
+    truth = np.array([0, 0, 0, 0])
+    pred = np.array([0, 0, 0, 0])
+    # one ground-truth run against a single prediction: one match, nothing left over
+    assert metrics.segment_counts(truth, pred) == (1, 0, 0)
+    # split prediction into two adjacent runs: still one match, one leftover fragment
+    pred_split = np.array([0, 0, 0, 0])
+    pred_split = pred_split.copy()
+    # the run boundary cannot be created without a different label, so use a gap class
+    pred_split = np.array([0, 0, 1, 0])
+    tp, fp, fn = metrics.segment_counts(truth, pred_split)
+    assert tp == 1 and fn == 0 and fp >= 1
 
 
-def test_match_bnd_respects_tolerance_and_uniqueness():
-    gt = [1.0, 2.0]
-    tp, fp, fn = common.match_bnd(gt, [1.1, 5.0], 0.2)
-    assert (tp, fp, fn) == (1, 1, 1)
-    # one prediction may not absorb two ground-truth boundaries
-    tp, fp, fn = common.match_bnd([1.0, 1.05], [1.02], 0.2)
-    assert tp == 1
-    assert fn == 1
+def test_iou_threshold_rejects_short_prediction():
+    truth = np.array([0] * 10)
+    pred = np.array([0] * 4)
+    # IoU = 4/10 < 0.5: the predicted run exists but does not match
+    assert metrics.segment_counts(truth, pred, 0.5) == (0, 1, 1)
 
 
-def test_match_bnd_empty_cases():
-    assert common.match_bnd([], [1.0], 0.1) == (0, 1, 0)
-    assert common.match_bnd([1.0], [], 0.1) == (0, 0, 1)
+def test_runs_break_at_background(toy_grid):
+    runs = objects.runs_for(toy_grid, "gear")
+    assert [len(idx) for _, idx in runs] == [5, 4, 2]
 
 
-def test_compress_and_lev():
-    assert common.compress([0, 0, 1, 1, 0]) == [0, 1, 0]
-    assert common.lev([0, 1, 0], [0, 1, 0]) == 0
-    assert common.lev([0, 1, 0], [0, 1]) == 1
-    assert common.lev([], [1, 2]) == 2
+def test_cells_exclude_the_pseudo_object(toy_grid):
+    toy_grid.obj = toy_grid.obj.copy()
+    toy_grid.obj[0] = "action"
+    cells = objects.cells(toy_grid)
+    assert ("E1", "action") not in cells
+    assert set(cells) == {("E1", "gear"), ("E2", "gear"), ("E2", "bolt")}
 
 
-def test_prior_correct_recovers_uniform_shape():
-    p = np.array([[0.7, 0.2, 0.1]])
-    w = np.array([1.0, 2.0, 4.0])
-    q = common.prior_correct(p, w)
-    assert q.shape == p.shape
-    assert np.isclose(q.sum(), 1.0)
-    # dividing by a larger weight must not increase the posterior mass
-    assert q[0, 2] < q[0, 0]
+def test_episode_score_averages_present_cells_only():
+    cell_f1 = {("E1", "a"): 0.5, ("E1", "b"): 1.0, ("E2", "a"): 0.0}
+    per_episode = metrics.episode_scores(cell_f1)
+    assert per_episode["E1"] == pytest.approx(0.75)
+    # E2 touches one object; the missing second object is absent, not scored as zero
+    assert per_episode["E2"] == pytest.approx(0.0)
 
 
-def test_pool_metrics_on_synthetic_sequences():
-    n, k = 40, 3
-    gt = np.array([0] * 10 + [1] * 10 + [2] * 20)
-    pred = gt.copy()
-    seqs = [("ep", np.arange(n))]
-    t = np.arange(n) * 0.2
-    y = np.zeros(n, dtype=int)
-    st = common.episode_stats(pred, seqs, gt, t, k)
-    pooled = common.pool(st)
-    assert np.isclose(pooled["seg_f1"], 1.0)
-    assert np.isclose(pooled["macro_f1"], 1.0)
-    assert np.isclose(pooled["acc"], 1.0)
-    assert np.isclose(pooled["edit"], 0.0)
-    assert pooled["n_seq"] == 1
+def test_cells_are_weighted_equally_regardless_of_length(toy_grid):
+    # a perfect short cell and a half-wrong long cell must average to 0.75, not to
+    # a frame-weighted value
+    pred = toy_grid.label.copy()
+    cells = objects.cells(toy_grid)
+    perfect = objects.all_runs({("E1", "gear"): cells[("E1", "gear")]})
+    score = metrics.cell_score(toy_grid.label, perfect, toy_grid.label)
+    assert score["f1"] == pytest.approx(1.0)
 
 
-def test_pool_reports_boundary_metrics():
-    k = 3
-    gt = np.array([0] * 5 + [1] * 5)
-    pred = np.array([0] * 5 + [1] * 5)
-    t = np.arange(10) * 0.2
-    st = common.episode_stats(pred, [("ep", np.arange(10))], gt, t, k)
-    pooled = common.pool(st)
-    assert np.isclose(pooled["bnd_F1@0.5"], 1.0)
-    assert pooled["bnd_fp_per_min@0.5"] >= 0.0
+def test_pooled_and_episode_mean_are_not_interchangeable(toy_grid):
+    pred = toy_grid.label.copy()
+    cells = objects.cells(toy_grid)
+    cell_f1 = metrics.cell_scores(pred, cells, toy_grid.label)
+    per_episode = metrics.episode_scores(cell_f1)
+    pooled = metrics.pooled_score(pred, objects.all_runs(cells), toy_grid.label)
+    assert pooled["f1"] == pytest.approx(1.0)
+    assert np.mean(list(per_episode.values())) == pytest.approx(1.0)
+    # break one long run only: the pooled score falls less than the episode mean
+    broken = pred.copy()
+    long_run = max(objects.all_runs(cells), key=lambda r: len(r[1]))[1]
+    broken[long_run[0]] = (broken[long_run[0]] + 1) % 9
+    broken_cells = metrics.cell_scores(broken, cells, toy_grid.label)
+    broken_mean = float(np.mean(list(metrics.episode_scores(broken_cells).values())))
+    broken_pooled = metrics.pooled_score(broken, objects.all_runs(cells), toy_grid.label)["f1"]
+    assert broken_mean != pytest.approx(broken_pooled)
 
 
-@pytest.mark.parametrize("thr", [0.5, 0.75])
-def test_seg_counts_threshold_monotone(thr):
-    gt = np.array([0] * 8 + [1] * 2)
-    pr = np.array([0] * 6 + [1] * 4)
-    tp_lo = common.seg_counts(gt, pr, 0.5)[0]
-    tp_hi = common.seg_counts(gt, pr, 0.75)[0]
-    assert tp_hi <= tp_lo
+def test_bootstrap_is_reproducible_and_width_positive():
+    deltas = np.linspace(-0.02, 0.09, 37)
+    a = metrics.bootstrap_interval(deltas, 2000, 20261111)
+    b = metrics.bootstrap_interval(deltas, 2000, 20261111)
+    assert a == b
+    assert a[1] > a[0]
+
+
+def test_frame_accuracy_uses_only_evaluation_frames(toy_grid):
+    pred = toy_grid.label.copy()
+    mask = (~toy_grid.is_bg) & (toy_grid.obj != "action")
+    assert metrics.frame_accuracy(pred, toy_grid.label, mask) == pytest.approx(1.0)
+    pred[0] = 5
+    assert metrics.frame_accuracy(pred, toy_grid.label, mask) < 1.0

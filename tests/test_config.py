@@ -1,77 +1,46 @@
+"""Configuration loading and the frozen seed derivation."""
 import json
-import os
 
-import numpy as np
+import pytest
 
-from crps import config as cfgmod, features
-
-
-def _reference(repo_root):
-    with open(os.path.join(repo_root, "results", "reference_metrics.json"), "r") as fh:
-        return json.load(fh)
+from skillseg.config import load_config
 
 
-def test_default_config_is_loadable():
-    cfg = cfgmod.load()
-    for key in ["data", "single_frame", "gru", "gate", "decode", "evaluation", "seeds"]:
-        assert key in cfg
+def test_protocol_values_match_the_frozen_run(config):
+    assert config.n_skills == 9
+    assert config.feature_dim == 72
+    assert config.window_s == 0.4 and config.stride_s == 0.2
+    assert config.history_frames == 15
+    assert config.lag_frames == 3
+    assert config.iou_threshold == 0.5
+    assert config.bootstrap_resamples == 4000
+    assert tuple(config.seeds) == (0, 1, 2)
+    assert config.prereg["max_ci_width"] == 0.02
 
 
-def test_default_config_matches_the_reported_run():
-    """The shipped config must describe the run whose numbers are in results/."""
-    cfg = cfgmod.load()
-    assert cfg["data"]["window"] == 0.4
-    assert cfg["data"]["stride"] == 0.2
-    assert cfg["data"]["history_frames"] == 15          # 3 s at a 0.2 s stride
-    assert cfg["gru"]["hidden"] == 48
-    assert cfg["gru"]["layers"] == 1
-    assert cfg["gru"]["epochs"] == 10
-    assert cfg["gru"]["batch"] == 256
-    assert cfg["gru"]["subsample"] == 60000
-    assert cfg["gru"]["lr"] == 0.001
-    assert cfg["dual_head"]["action_aux_weight"] == 1.0
-    assert cfg["decode"]["lag_frames"] == 3
-    assert cfg["decode"]["nominal_wait_seconds"] == 0.6
-    assert cfg["seeds"]["global"] == 0
-    assert cfg["seeds"]["volume_match_seeds"] == 5
+def test_seed_derivation_is_fixed(config):
+    assert [config.train_seed(i) for i in range(3)] == [20261128, 20262128, 20263128]
 
 
-def test_history_covers_the_declared_seconds():
-    cfg = cfgmod.load()
-    seconds = cfg["data"]["history_frames"] * cfg["data"]["stride"]
-    assert abs(seconds - 3.0) < 1e-9
+def test_split_files_are_read_verbatim(config, tmp_path):
+    split_dir = tmp_path / "splits"
+    split_dir.mkdir(parents=True, exist_ok=True)
+    (split_dir / "train_split1.txt").write_text("a\nb\n\n", encoding="utf-8")
+    (split_dir / "test_split1.txt").write_text("c\n", encoding="utf-8")
+    assert config.dataset.split("train") == ["a", "b"]
+    assert config.dataset.split("test") == ["c"]
 
 
-def test_fused_dimension_matches_the_paper(repo_root):
-    ref = _reference(repo_root)
-    assert ref["protocol"]["frame_feature_dim"] == features.FRAME_FEATURE_DIM
-    assert ref["protocol"]["fused_feature_dim"] == features.FRAME_FEATURE_DIM + ref["protocol"]["parent_actions"]
+def test_missing_split_file_names_the_expected_path(config):
+    with pytest.raises(FileNotFoundError) as exc:
+        config.dataset.split("train")
+    assert "train_split1.txt" in str(exc.value)
 
 
-def test_reference_metrics_are_internally_consistent(repo_root):
-    ref = _reference(repo_root)
-    main = ref["main_run"]["segmental_f1_mean_over_17_object_folds"]
-    five = ref["five_model_round"]["segmental_f1_mean_over_17_object_folds"]
-    # the two runs are separate, but both share the same context-free baseline
-    assert main["SF"] == five["SF"] == 0.6717
-    # the main run and the five-model round report different GRUctx numbers
-    assert main["GRUctx"] != five["GRUctx"]
-    for name, value in five.items():
-        assert 0.0 <= value <= 1.0, name
-
-
-def test_reference_metrics_state_their_limitations(repo_root):
-    ref = _reference(repo_root)
-    text = " ".join(ref["known_limitations"]).lower()
-    assert "sealed" in text
-    assert "seed" in text
-    assert "boundary" in text
-
-
-def test_set_seeds_is_reproducible():
-    cfg = cfgmod.load()
-    cfgmod.set_seeds(cfg)
-    a = np.random.rand(3)
-    cfgmod.set_seeds(cfg)
-    b = np.random.rand(3)
-    assert np.allclose(a, b)
+def test_bad_feature_dim_is_rejected(tmp_path, config):
+    raw = json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))
+    raw["features"]["force_dims"] = [3]
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps(raw), encoding="utf-8")
+    with pytest.raises(ValueError, match="72"):
+        load_config(bad)

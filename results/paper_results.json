@@ -1,0 +1,254 @@
+{
+ "_note": "Frozen values for the manuscript. See REPRODUCIBILITY.md for what was recomputed and what was not.",
+ "manuscript": "Readout Sensitivity and Temporal Evaluation in Sensor-Based Robot Skill Segmentation for Contact-Rich Assembly",
+ "evidence_classes": {
+  "grid_labels_features": "REPRODUCED",
+  "aggregation_and_interval": "REPRODUCED",
+  "training_and_holdout_inference": "FROZEN_VERIFIED",
+  "secondary_diagnostics": "FROZEN_VERIFIED",
+  "legacy_context_study": "REPORTED_ONLY"
+ },
+ "protocol": {
+  "split": "official test_split1.txt",
+  "episodes": 37,
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "cluster_unit": "episode",
+  "n_cells": 473,
+  "n_runs": 2419,
+  "eval_frames": 48644,
+  "objects_per_episode": 12.78,
+  "bootstrap_resamples": 4000,
+  "bootstrap_seed": 20261111,
+  "iou_threshold": 0.5
+ },
+ "confirmation": {
+  "arm_means": {
+   "A": 0.7001,
+   "P": 0.7477,
+   "S": 0.6619
+  },
+  "paired": {
+   "delta_pp": 4.7555,
+   "ci95_pp": [
+    3.4741,
+    5.9937
+   ],
+   "width_pp": 2.5196,
+   "episodes_improved": 35,
+   "n_episodes": 37,
+   "t_stat": 7.234,
+   "t_p": 1.6217164001967954e-08,
+   "wilcoxon_p": 7.243943400681019e-08,
+   "sign_p_one_sided": 5.122274160385132e-09
+  },
+  "per_seed": {
+   "0": {
+    "training_seed": 20261128,
+    "A": 0.6686,
+    "P": 0.7571,
+    "delta_pp": 8.85,
+    "episodes_improved": 35
+   },
+   "1": {
+    "training_seed": 20262128,
+    "A": 0.7284,
+    "P": 0.7431,
+    "delta_pp": 1.47,
+    "episodes_improved": 25
+   },
+   "2": {
+    "training_seed": 20263128,
+    "A": 0.7033,
+    "P": 0.7428,
+    "delta_pp": 3.95,
+    "episodes_improved": 33
+   }
+  },
+  "seed_spread_pp": {
+   "A_sd": 3.0,
+   "P_sd": 0.81
+  },
+  "episodes_improved_in_every_seed": 24,
+  "per_class_frame_f1": {
+   "Align": {
+    "A": 0.9183,
+    "P": 0.9254,
+    "S": 0.8811
+   },
+   "Approach": {
+    "A": 0.9492,
+    "P": 0.9582,
+    "S": 0.9389
+   },
+   "Grasp": {
+    "A": 0.9422,
+    "P": 0.9477,
+    "S": 0.9259
+   },
+   "Lift": {
+    "A": 0.5592,
+    "P": 0.6608,
+    "S": 0.4178
+   },
+   "Nudge": {
+    "A": 0.0182,
+    "P": 0.1388,
+    "S": 0.0
+   },
+   "Pull": {
+    "A": 0.9274,
+    "P": 0.9307,
+    "S": 0.8733
+   },
+   "Push": {
+    "A": 0.7673,
+    "P": 0.7773,
+    "S": 0.529
+   },
+   "Release": {
+    "A": 0.5726,
+    "P": 0.6541,
+    "S": 0.5559
+   },
+   "Twist": {
+    "A": 0.7691,
+    "P": 0.7924,
+    "S": 0.5197
+   }
+  },
+  "pooled": {
+   "A": {
+    "f1": 0.6866,
+    "tp": 2038,
+    "fp": 1483,
+    "fn": 381,
+    "frame_accuracy": 0.9133
+   },
+   "P": {
+    "f1": 0.7329,
+    "tp": 2148,
+    "fp": 1294,
+    "fn": 271,
+    "frame_accuracy": 0.9224
+   },
+   "S": {
+    "f1": 0.6246,
+    "tp": 1945,
+    "fp": 1864,
+    "fn": 474,
+    "frame_accuracy": 0.8813
+   }
+  },
+  "cell_diagnostic": {
+   "n": 473,
+   "mean": 0.0492,
+   "sd": 0.0668,
+   "n_pos": 344,
+   "role": "diagnostic only"
+  }
+ },
+ "secondary": {
+  "censoring": {
+   "dev": {
+    "pooled_share_le2": 0.149,
+    "n": 7743
+   },
+   "test": {
+    "pooled_share_le2": 0.1709,
+    "n": 2452
+   },
+   "per_class_test_share_le2": {
+    "Align": 0.0086,
+    "Approach": 0.0019,
+    "Grasp": 0.0,
+    "Lift": 0.4506,
+    "Nudge": 0.0,
+    "Pull": 0.0635,
+    "Push": 0.0,
+    "Release": 0.6446,
+    "Twist": 0.0
+   },
+   "per_class_test_n": {
+    "Align": 233,
+    "Approach": 526,
+    "Grasp": 580,
+    "Lift": 233,
+    "Nudge": 10,
+    "Pull": 299,
+    "Push": 55,
+    "Release": 453,
+    "Twist": 63
+   },
+   "status": "S2-PASS"
+  },
+  "long_release": {
+   "dev": {
+    "1-1": {
+     "n": 324,
+     "match": 0.8704
+    },
+    "2-2": {
+     "n": 404,
+     "match": 0.9406
+    },
+    "3-5": {
+     "n": 426,
+     "match": 0.8568
+    },
+    "6-1000000000": {
+     "n": 189,
+     "match": 0.2804
+    }
+   },
+   "test": {
+    "1-1": {
+     "n": 127,
+     "match": 0.7008
+    },
+    "2-2": {
+     "n": 148,
+     "match": 0.8446
+    },
+    "3-5": {
+     "n": 106,
+     "match": 0.6321
+    },
+    "6-1000000000": {
+     "n": 55,
+     "match": 0.0727
+    }
+   },
+   "dev_share_pred_grasp_ge6": 0.5935,
+   "test_share_pred_grasp_ge6": 0.6631,
+   "arm_A_long_match": 0.3394,
+   "arm_P_long_match": 0.4061,
+   "arm_S_long_match": 0.0727,
+   "status": "S3-PASS",
+   "reference_decoder": "arm S (deterministic)"
+  }
+ },
+ "decision": {
+  "verdict": "CONFIRMED",
+  "verdict_strict": "INCONCLUSIVE",
+  "underpowered": true,
+  "clause_conflict": true,
+  "rules": {
+   "confirm_delta": 0.01,
+   "equiv_upper": 0.005,
+   "min_pos": 24,
+   "max_width": 0.02,
+   "boot": 4000
+  }
+ },
+ "not_claimed": [
+  "a new algorithm or architecture",
+  "a cross-day, cross-session or cross-embodiment result",
+  "comparability with any published F1@tau from a vision-based baseline",
+  "that the Release annotation is incorrect",
+  "that the point estimate equals the +8.85 pp of the most favourable seed"
+ ]
+}

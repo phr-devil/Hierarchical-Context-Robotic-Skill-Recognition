@@ -1,34 +1,41 @@
 cff-version: 1.2.0
 message: >-
-  Citation metadata for this software. The accompanying paper is not published
-  yet, so no article reference is given here; do not cite this as a publication
-  until that reference is added below.
+  Citation metadata for this software. The accompanying manuscript is not
+  published, so no article reference is given here and no DOI is claimed. Do not
+  cite this repository as a publication until that reference exists.
 
-title: "Predicted Hierarchical Action Context for Low-Level Skill Recognition in Robotic Assembly"
+title: "Readout Sensitivity and Temporal Evaluation in Sensor-Based Robot Skill Segmentation for Contact-Rich Assembly"
 abstract: >-
-  Reference implementation for evaluating whether an online posterior over the
-  parent assembly action, predicted from a three-second causal history of
-  robot-state features, improves low-level robotic skill recognition on the
-  REASSEMBLE dataset under leave-one-object-out cross-validation.
+  Reference implementation for a measurement study of proprioceptive low-level
+  skill segmentation on the REASSEMBLE corpus. The study quantifies how much of
+  the reported segmental F1 is fixed by the annotation and the 5 Hz evaluation
+  grid, and how much a change of readout on a frozen encoder moves the score
+  relative to adding hierarchical context. Three arms share one encoder: a
+  jointly trained GRU with a softmax head, the same frozen GRU with a
+  class-balanced logistic probe, and a single-frame logistic regression without
+  any encoder. The holdout is the official 37-episode test split, scored once
+  under a pre-registered rule that is reported together with the clause it
+  conflicts with.
 type: software
-version: "1.0.0"
+version: "2.0.0"
 repository-code: "https://github.com/phr-devil/Hierarchical-Context-Robotic-Skill-Recognition"
 url: "https://github.com/phr-devil/Hierarchical-Context-Robotic-Skill-Recognition"
 
-# TODO(authors): replace the alias below with the confirmed author list once the
-# paper's author order and affiliations are settled. Do not invent names.
+# TODO(authors): the manuscript's author list and order are not final. The alias
+# below identifies the repository owner only; replace it once the paper is settled.
 authors:
   - alias: phr-devil
     website: "https://github.com/phr-devil"
 
 keywords:
-  - robotic manipulation
+  - robotic assembly
+  - low-level skill segmentation
   - temporal action segmentation
-  - hierarchical context
-  - low-level skill recognition
-  - force/torque sensing
+  - readout sensitivity
+  - evaluation protocol
+  - proprioception
+  - force/torque
   - REASSEMBLE
 
-# TODO(license): no licence has been chosen; see README. Add `license:` only
-# after the code ownership and the terms of the third-party dependencies are
-# confirmed.
+# TODO(license): no licence has been declared. Add `license:` only after the code
+# ownership and the terms of the third-party dependencies are confirmed.

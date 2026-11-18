@@ -1,0 +1,24 @@
+{
+ "_note": "Both readings of the pre-registered width clause. Neither is suppressed.",
+ "endpoint": "mean paired episode difference in segmental F1, P - A, 37 test episodes",
+ "delta_pp": 4.7555,
+ "ci95_pp": [
+  3.4741,
+  5.9937
+ ],
+ "width_pp": 2.5196,
+ "max_width_pp": 2.0,
+ "episodes_improved": 35,
+ "min_improved": 24,
+ "verdict_as_coded": "CONFIRMED",
+ "verdict_width_enforced": "INCONCLUSIVE",
+ "clause_conflict": true,
+ "explanation": "The ordered test passes on effect size, interval sign and episode count. The pre-registered interval width bound of 2.0 pp is exceeded (2.52 pp). The width condition appears in the prose of the 'otherwise' branch rather than in the ordered test, so the two readings differ. Both are reported in the manuscript.",
+ "per_seed_delta_pp": {
+  "0": 8.85,
+  "1": 1.47,
+  "2": 3.95
+ },
+ "seed_heterogeneity": "A sd 3.00 pp vs P sd 0.81 pp; lower bound is 24/37 improving under all seeds",
+ "evidence_class": "FROZEN_VERIFIED"
+}
