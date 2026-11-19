@@ -12,11 +12,19 @@ def test_prior_correction_renormalises():
     assert np.allclose(corrected, p)
 
 
-def test_prior_correction_downweights_frequent_classes():
+def test_prior_correction_divides_inverse_frequency_weights():
+    # The larger inverse-frequency weight belongs to the rarer class.
     p = np.array([[0.5, 0.5]])
     weights = np.array([10.0, 1.0])
     corrected = decode.prior_correct(p, weights)
     assert corrected[0, 1] > corrected[0, 0]
+
+
+def test_prior_correction_uses_class_counts_not_inverse_counts():
+    labels = np.array([0, 0, 0, 0, 1])
+    weights = decode.class_weights(labels, 2)
+    corrected = decode.prior_correct(np.array([[0.5, 0.5]]), weights)
+    assert np.allclose(corrected, np.array([[0.8, 0.2]]))
 
 
 def test_class_weights_are_inverse_frequency():
@@ -36,7 +44,7 @@ def test_transition_matrix_rows_sum_to_one():
 
 
 def test_background_label_lands_on_the_last_row():
-    """Documents inherited behaviour: -1 indexes the last class row.
+    """Documents inherited behaviour: -1 indexes the last row or column.
 
     The frozen scoring program passed the full label array, background included,
     so outgoing transitions of background frames were added to the last skill.
@@ -50,6 +58,32 @@ def test_background_label_lands_on_the_last_row():
     # row ends up holding both a self-loop and an edge that no class-2 frame made
     assert t[2, 2] == pytest.approx(0.5)
     assert t[2, 0] == pytest.approx(0.5)
+
+
+def test_masked_transition_ignores_background_on_both_axes():
+    labels = np.array([0, 0, -1, 1, 1])
+    seqs = [("E", np.arange(len(labels)))]
+    frozen = decode.transition_matrix(labels, seqs, 2, alpha=1.0)
+    masked = decode.transition_matrix_masked(labels, seqs, 2, alpha=1.0)
+    assert np.allclose(frozen, [[0.5, 0.5], [0.25, 0.75]])
+    assert np.allclose(masked, [[2 / 3, 1 / 3], [1 / 3, 2 / 3]])
+    assert not np.allclose(masked, frozen)
+
+
+def test_masked_transition_agrees_with_frozen_without_invalid_labels():
+    labels = np.array([0, 1, 1, 2, 0, 2])
+    seqs = [("A", np.arange(3)), ("B", np.arange(3, 6))]
+    for alpha in (0.0, 1.0):
+        expected = decode.transition_matrix(labels, seqs, 3, alpha)
+        actual = decode.transition_matrix_masked(labels, seqs, 3, alpha)
+        assert np.array_equal(actual, expected)
+
+
+def test_masked_transition_rejects_other_out_of_range_labels():
+    labels = np.array([0, 99, 1, -1, 0])
+    seqs = [("E", np.arange(len(labels)))]
+    masked = decode.transition_matrix_masked(labels, seqs, 2, alpha=1.0)
+    assert np.allclose(masked, np.full((2, 2), 0.5))
 
 
 def test_viterbi_removes_a_single_frame_flicker():

@@ -259,12 +259,16 @@ repository does not claim otherwise.
 These are recorded because a reader who "fixes" them will no longer reproduce the published
 numbers.
 
-1. **Transition matrix and background frames.** The transition matrix is estimated from the full
-   label sequence, in which background frames carry `-1`. Negative indexing maps those frames onto
-   the **last skill row**, so that row accumulates the outgoing transitions of background frames.
-   This is the behaviour of the frozen implementation and it is preserved deliberately. It is a
-   defect, not a modelling choice; it is pinned by a test and documented in
-   [docs/SCORING.md](docs/SCORING.md).
+1. **Transition matrix and background frames.** The frozen estimator includes
+   background frames with label `-1`, which NumPy aliases to the last skill
+   index (`Twist`). This contaminates the last transition-matrix **row or
+   column**, depending on whether background is the source or destination.
+   The original estimator remains the default, so published results are not
+   silently changed. The opt-in `transition_matrix_masked()` skips invalid
+   transitions, but its A/P impact is **not yet measured**. A shared decoder
+   does not guarantee that the error cancels in P−A. See
+   [docs/SCORING.md](docs/SCORING.md) and
+   [docs/DECODER_SENSITIVITY.md](docs/DECODER_SENSITIVITY.md).
 2. **Cells are equally weighted, not frame-weighted.** A one-frame visit counts as much as a
    ten-second one. The pooled score is reported alongside so the difference is visible.
 3. **Object-level leave-one-out is not leave-one-domain-out.** The development protocol holds out
@@ -297,13 +301,13 @@ tests, and it should not be read as supporting the current paper's claims.
 ## Tests
 
 ```bash
-pytest                     # 50 tests, no dataset needed
+pytest                     # dataset-free unit tests (number may change)
 pytest -k "not arms"       # without torch
 ```
 
 The suite covers run-length matching, the IoU threshold, one-to-one behaviour, cell and episode
 aggregation, pooled-versus-episode divergence, bootstrap reproducibility, prior correction, the
-fixed-lag decoder, the transition-matrix defect, the A/P pairing guarantees, the decision rule
+fixed-lag decoder, the frozen and background-masked transition estimators, the A/P pairing guarantees, the decision rule
 including the width conflict, and the censoring diagnostic. It does not train on real data and it
 does not touch the holdout.
 

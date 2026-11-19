@@ -13,6 +13,27 @@ implies a ceiling on segmental F1 that the measurement does not support. The com
 
 ---
 
+## Post-v2.0.1 decoder audit (later `main` changes)
+
+The historical `v2.0.1` tag and the frozen numerical results remain unchanged.
+The later `main` updates expose an **opt-in** background-masked transition
+estimator and add synthetic regression tests. The frozen `transition_matrix()`,
+the default pipeline, `configs/default.json`, and the reported A/P/S scores are
+not changed. No new model training, DEV effect estimate, or official-test inference
+was performed as part of this code/documentation correction.
+
+The known defect is now described precisely: a background label `-1` can
+index the last row **or** the last column of the transition matrix. Even though
+all arms use the same matrix, its effect on their *difference* has not been
+quantified. The proposed DEV-only sensitivity procedure, evidence prerequisites
+and reporting restrictions are in
+[docs/DECODER_SENSITIVITY.md](docs/DECODER_SENSITIVITY.md).
+The added synthetic tests must be executed in a checked-out environment before
+claiming they passed; this update does not label any corrected-decoder results
+as `REPRODUCED`.
+
+---
+
 ## Environment
 
 | | |

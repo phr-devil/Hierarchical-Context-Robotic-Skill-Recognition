@@ -95,14 +95,24 @@ asserted: see [README](../README.md#the-three-arms-and-why-ap-is-a-readout-compa
 
 Both steps are shared by all three arms and estimated on development data only.
 
-1. **Class-prior correction.** Posteriors are divided by the development class frequencies and
-   renormalised. This is not a threshold and introduces no free parameter.
+1. **Inverse-frequency-weight correction.** From the non-background development
+   counts `n_k`, the frozen code computes `w_k = N / (K * n_k)` (with
+   absent-class safeguards). Posteriors are divided by `w_k` and renormalised:
+   `q_k = (p_k / w_k) / sum_j(p_j / w_j)`, equivalent to reweighting
+   by development class counts when all counts are positive. It is not a
+   threshold and introduces no tuned parameter. The implementation direction
+   is **not** division by class frequency.
 2. **Fixed-lag Viterbi.** Each episode is decoded independently with a three-frame lag (0.6 s
    nominal wait), so a frame is committed only after three more frames have been observed.
 
-Transition counts come from the development sequences and carry a defect inherited from the
-frozen implementation — background frames land on the last skill row. It is documented in
-[SCORING.md](SCORING.md#inherited-defects) and pinned by a test.
+Transition counts come from the full development episode sequences. The frozen
+implementation has a documented negative-indexing defect: background `-1` can
+contaminate the final skill **row or column**. The frozen decoder remains the
+official-test default. A separately named background-masked matrix estimator is
+available for explicitly labelled post hoc DEV sensitivity work only; no masked
+result is substituted for the published numbers. See
+[SCORING.md](SCORING.md#inherited-defects) and
+[DECODER_SENSITIVITY.md](DECODER_SENSITIVITY.md).
 
 ---
 

@@ -3,8 +3,9 @@
 Two post-processing steps sit between the posteriors and the scored sequence, and
 both are held fixed across arms:
 
-* the posteriors are divided by the training class frequencies (a prior
-  correction, not a threshold);
+* the posteriors are divided by inverse-frequency class weights and
+  renormalised (equivalently, multiplied by development class counts);
+  this compensates for balanced training and is not a threshold;
 * a Viterbi pass runs over each episode with a three-frame lag, so a frame is
   committed only after three further frames have been observed.  That keeps the
   decoder causal at the 0.6 s nominal wait while removing isolated flickers.
@@ -26,7 +27,11 @@ def class_weights(labels: np.ndarray, n_classes: int) -> np.ndarray:
 
 
 def prior_correct(posteriors: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    """Divide by class prior and renormalise, row by row."""
+    """Divide by inverse-frequency training weights and renormalise.
+
+    For w_k = N / (K * n_k), q_k is proportional to p_k / w_k,
+    equivalently p_k * n_k. This preserves the frozen implementation.
+    """
     q = posteriors / weights[None, :]
     total = q.sum(axis=1, keepdims=True)
     total[total <= 0] = 1.0
@@ -39,22 +44,43 @@ def transition_matrix(labels: np.ndarray, sequences: Sequence[Tuple[str, np.ndar
 
     .. warning::
        ``labels`` is the full grid label array, in which background frames carry
-       ``-1``.  Negative indexing maps those frames onto the **last** skill row,
-       so that row also accumulates the outgoing transitions of background
-       frames.  This is the behaviour of the frozen implementation and it is
-       preserved here deliberately: the reported scores were produced with it.
-       It is a defect, not a modelling choice, and it is recorded as such in
-       ``README.md`` and ``docs/SCORING.md``.  Do not "fix" it and then compare
-       the result against the published numbers.
+       ``-1``. NumPy negative indexing redirects such transitions to the last
+       skill row when the source is background, or the last skill column
+       when the destination is background. Both contaminate the frozen counts.
+       The reported results used this exact function. Do not modify its
+       behaviour while claiming to reproduce the frozen study.
 
-    Pass a label array without negative entries if a clean matrix is wanted; that
-    variant was never used for any reported number.
+    For a post hoc comparison, call ``transition_matrix_masked`` explicitly.
+    That alternative is not used by the official-test pipeline.
     """
     counts = np.full((n_classes, n_classes), float(alpha))
     for _, idx in sequences:
         y = labels[idx]
         for a, b in zip(y[:-1], y[1:]):
             counts[int(a), int(b)] += 1.0
+    row = counts.sum(axis=1, keepdims=True)
+    row[row <= 0] = 1.0
+    return counts / row
+
+
+def transition_matrix_masked(labels: np.ndarray,
+                             sequences: Sequence[Tuple[str, np.ndarray]],
+                             n_classes: int, alpha: float = 1.0) -> np.ndarray:
+    """Post hoc alternative: skip transitions touching an invalid/background label.
+
+    This is deliberately separate from the frozen ``transition_matrix`` and
+    is NOT used by ``pipeline.train_and_predict``. It changes the transition
+    model and must never be presented as the preregistered test decoder.
+    Use only with development-set evidence for a separately labelled
+    sensitivity analysis.
+    """
+    counts = np.full((n_classes, n_classes), float(alpha))
+    for _, idx in sequences:
+        y = labels[idx]
+        for a, b in zip(y[:-1], y[1:]):
+            ai, bi = int(a), int(b)
+            if 0 <= ai < n_classes and 0 <= bi < n_classes:
+                counts[ai, bi] += 1.0
     row = counts.sum(axis=1, keepdims=True)
     row[row <= 0] = 1.0
     return counts / row

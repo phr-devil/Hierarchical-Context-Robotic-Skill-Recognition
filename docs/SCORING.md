@@ -159,14 +159,18 @@ and an effect below roughly 1 pp could not have been confirmed at all.
 These are properties of the frozen implementation. They are preserved so that the published
 numbers remain reproducible, and they are pinned by tests so that they cannot change silently.
 
-1. **Background frames in the transition matrix.** The matrix is estimated from the full
-   label sequence, background included. Background frames carry `-1`, and negative indexing
-   maps them onto the **last** skill row (`Twist`, in the alphabetical class order). That row
-   therefore also accumulates the outgoing transitions of background frames — mostly
-   transitions into segment starts. The decoder's transitions out of `Twist` are consequently
-   contaminated. `tests/test_decode.py::test_background_label_lands_on_the_last_row` pins the
-   behaviour. Fixing it would change the decoded sequences and invalidate comparison with the
-   published numbers; it is left as a documented defect.
+1. **Background frames in the transition matrix.** The frozen matrix is estimated from
+   complete development episode sequences, including background frames labelled `-1`.
+   NumPy negative indexing maps `-1` to the final skill index (`Twist`): background as
+   the source contaminates the **last row**, and background as the destination contaminates
+   the **last column**. This can alter the shared Viterbi decoder and hence both absolute
+   segmental scores and the paired A/P difference; using the same matrix for all arms
+   does not prove cancellation. The frozen `transition_matrix()` is unchanged, with the
+   original behaviour pinned by tests. A separately named
+   `transition_matrix_masked()` skips transitions whenever either label is outside
+   `[0, n_classes)`. It is **opt-in**, post hoc, and not called in the official-test
+   pipeline. See [DECODER_SENSITIVITY.md](DECODER_SENSITIVITY.md). No corrected-decoder
+   A/P effect has been measured or validated here.
 2. **Greedy matching.** A globally optimal assignment would accept a different set of pairs in
    ambiguous cases. No alternative was ever scored.
 3. **Object-level leave-one-out is not leave-one-domain-out.** In the development protocol one
